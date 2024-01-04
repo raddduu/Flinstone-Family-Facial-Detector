@@ -10,6 +10,7 @@ import ntpath
 from copy import deepcopy
 import timeit
 from skimage.feature import hog
+from skimage.transform import resize
 import os
 
 
@@ -19,24 +20,41 @@ class FacialDetector:
         self.best_model = None
 
     def get_positive_descriptors(self):
+        path = self.params.dir_pos_examples
+        label = 'pozitive'
+
+        pozitive_descriptors = self._get_descriptors(path, label)
+
+        return pozitive_descriptors
+    
+    def get_negative_descriptors(self):
+        path = self.params.dir_neg_examples
+        label = 'negative'
+
+        negative_descriptors = self._get_descriptors(path, label)
+
+        return negative_descriptors
+
+    def _get_descriptors(self, path, label):
         # in aceasta functie calculam descriptorii pozitivi
         # vom returna un numpy array de dimensiuni NXD
         # unde N - numar exemplelor pozitive
         # iar D - dimensiunea descriptorului
         # D = (params.dim_window/params.dim_hog_cell - 1) ^ 2 * params.dim_descriptor_cell (fetele sunt patrate)
 
-        images_path = os.path.join(self.params.dir_pos_examples, '*.jpg')
+        images_path = os.path.join(path, '*.jpg')
 
         files = glob.glob(images_path)
 
         num_images = len(files)
 
-        positive_descriptors = []
+        descriptors = []
 
-        print('Calculam descriptorii pt %d imagini pozitive...' % num_images)
+        print(f'Procesam imaginile {label}')
+        print('Calculam descriptorii pt %d imagini ...' % num_images)
 
         for i in range(num_images):
-            print('Procesam exemplul pozitiv numarul %d...' % i)
+            print('Procesam exemplul numarul %d...' % i)
 
             img = cv.imread(files[i], cv.IMREAD_GRAYSCALE)
 
@@ -47,65 +65,17 @@ class FacialDetector:
             
             print(len(features))
 
-            positive_descriptors.append(features)
+            descriptors.append(features)
 
             if self.params.use_flip_images:
                 features = hog(np.fliplr(img), pixels_per_cell=(self.params.dim_hog_cell, self.params.dim_hog_cell),
                                cells_per_block=(2, 2), feature_vector=True)
                 
-                positive_descriptors.append(features)
+                descriptors.append(features)
 
-        positive_descriptors = np.array(positive_descriptors)
+        descriptors = np.array(descriptors)
 
-        return positive_descriptors
-
-    def get_negative_descriptors(self):
-        # in aceasta functie calculam descriptorii negativi
-        # vom returna un numpy array de dimensiuni NXD
-        # unde N - numar exemplelor negative
-        # iar D - dimensiunea descriptorului
-        # avem 274 de imagini negative, vream sa avem self.params.number_negative_examples (setat implicit cu 10000)
-        # de exemple negative, din fiecare imagine vom genera aleator self.params.number_negative_examples // 274
-        # patch-uri de dimensiune 36x36 pe care le vom considera exemple negative
-
-        images_path = os.path.join(self.params.dir_neg_examples, '*.jpg')
-
-        files = glob.glob(images_path)
-
-        num_images = len(files)
-
-        num_negative_per_image = self.params.number_negative_examples // num_images
-
-        negative_descriptors = []
-
-        print('Calculam descriptorii pt %d imagini negative' % num_images)
-
-        for i in range(num_images):
-            print('Procesam exemplul negativ numarul %d...' % i)
-
-            img = cv.imread(files[i], cv.IMREAD_GRAYSCALE)
-
-            # TODO: completati codul functiei in continuare
-
-            num_rows = img.shape[0]
-
-            num_cols = img.shape[1]
-
-            x = np.random.randint(low=0, high=num_cols - self.params.dim_window, size=num_negative_per_image)
-
-            y = np.random.randint(low=0, high=num_rows - self.params.dim_window, size=num_negative_per_image)
-
-            for idx in range(len(y)):
-                patch = img[y[idx]: y[idx] + self.params.dim_window, x[idx]: x[idx] + self.params.dim_window]
-
-                descr = hog(patch, pixels_per_cell=(self.params.dim_hog_cell, self.params.dim_hog_cell),
-                            cells_per_block=(2, 2), feature_vector=False)
-                
-                negative_descriptors.append(descr.flatten())
-
-        negative_descriptors = np.array(negative_descriptors)
-
-        return negative_descriptors
+        return descriptors
 
     def train_classifier(self, training_examples, train_labels):
         svm_file_name = os.path.join(self.params.dir_save_files, 'best_model_%d_%d_%d' %
@@ -220,21 +190,6 @@ class FacialDetector:
         return sorted_image_detections[is_maximal], sorted_scores[is_maximal]
 
     def run(self):
-        """
-        Aceasta functie returneaza toate detectiile ( = ferestre) pentru toate imaginile din self.params.dir_test_examples
-        Directorul cu numele self.params.dir_test_examples contine imagini ce
-        pot sau nu contine fete. Aceasta functie ar trebui sa detecteze fete atat pe setul de
-        date MIT+CMU dar si pentru alte imagini
-        Functia 'non_maximal_suppression' suprimeaza detectii care se suprapun (protocolul de evaluare considera o detectie duplicata ca fiind falsa)
-        Suprimarea non-maximelor se realizeaza pe pentru fiecare imagine.
-        :return:
-        detections: numpy array de dimensiune NX4, unde N este numarul de detectii pentru toate imaginile.
-        detections[i, :] = [x_min, y_min, x_max, y_max]
-        scores: numpy array de dimensiune N, scorurile pentru toate detectiile pentru toate imaginile.
-        file_names: numpy array de dimensiune N, pentru fiecare detectie trebuie sa salvam numele imaginii.
-        (doar numele, nu toata calea).
-        """
-
         test_images_path = os.path.join(self.params.dir_test_examples, '*.jpg')
 
         test_files = glob.glob(test_images_path)
@@ -259,41 +214,51 @@ class FacialDetector:
 
             img = cv.imread(test_files[i], cv.IMREAD_GRAYSCALE)
 
-            # TODO: completati codul functiei in continuare
-            image_scores = []
-            image_detections = []
-            hog_descriptors = hog(img, pixels_per_cell=(self.params.dim_hog_cell, self.params.dim_hog_cell),
-                                  cells_per_block=(2, 2), feature_vector=False)
-            
-            num_cols = img.shape[1] // self.params.dim_hog_cell - 1
-            num_rows = img.shape[0] // self.params.dim_hog_cell - 1
-            num_cell_in_template = self.params.dim_window // self.params.dim_hog_cell - 1
+            start_windows_dim = self.params.dim_window
+            end_windows_dim = min(img.shape)
+            step = int(np.sqrt(start_windows_dim))
+            windows = range(start_windows_dim, end_windows_dim, step)
 
-            for y in range(0, num_rows - num_cell_in_template):
-                for x in range(0, num_cols - num_cell_in_template):
-                    descr = hog_descriptors[y:y + num_cell_in_template, x:x + num_cell_in_template].flatten()
-                    score = np.dot(descr, w)[0] + bias
+            windows = [w for w in windows if w < min(img.shape)]
 
-                    if score > self.params.threshold:
-                        x_min = int(x * self.params.dim_hog_cell)
-                        y_min = int(y * self.params.dim_hog_cell)
-                        x_max = int(x * self.params.dim_hog_cell + self.params.dim_window)
-                        y_max = int(y * self.params.dim_hog_cell + self.params.dim_window)
-                        image_detections.append([x_min, y_min, x_max, y_max])
-                        image_scores.append(score)
+            for window_size in windows:
+                image_scores = []
+                image_detections = []
 
-            if len(image_scores) > 0:
-                image_detections, image_scores = self.non_maximal_suppression(np.array(image_detections),
-                                                                              np.array(image_scores), img.shape)
-            if len(image_scores) > 0:
-                if detections is None:
-                    detections = image_detections
-                else:
-                    detections = np.concatenate((detections, image_detections))
-                scores = np.append(scores, image_scores)
-                short_name = ntpath.basename(test_files[i])
-                image_names = [short_name for ww in range(len(image_scores))]
-                file_names = np.append(file_names, image_names)
+                adjusted_cell_size = window_size // self.params.dim_hog_cell
+
+                hog_descriptors = hog(img, pixels_per_cell=(self.params.dim_hog_cell, self.params.dim_hog_cell), cells_per_block=(2, 2), feature_vector=False)
+                
+                num_cols = img.shape[1] // adjusted_cell_size - 1
+                num_rows = img.shape[0] // adjusted_cell_size - 1
+
+                num_cell_in_template = self.params.dim_window // self.params.dim_hog_cell - 1
+
+                for y in range(0, num_rows - num_cell_in_template):
+                    for x in range(0, num_cols - num_cell_in_template):
+                        descr = hog_descriptors[y:y + num_cell_in_template, x:x + num_cell_in_template].flatten()
+                        score = np.dot(descr, w)[0] + bias
+
+                        if score > self.params.threshold:
+                            x_min = int(x * adjusted_cell_size)
+                            y_min = int(y * adjusted_cell_size)
+                            x_max = int(x * adjusted_cell_size + window_size)
+                            y_max = int(y * adjusted_cell_size + window_size)
+                            image_detections.append([x_min, y_min, x_max, y_max])
+                            image_scores.append(score)
+
+                if len(image_scores) > 0:
+                    image_detections, image_scores = self.non_maximal_suppression(np.array(image_detections),
+                                                                                np.array(image_scores), img.shape)
+                if len(image_scores) > 0:
+                    if detections is None:
+                        detections = image_detections
+                    else:
+                        detections = np.concatenate((detections, image_detections))
+                    scores = np.append(scores, image_scores)
+                    short_name = ntpath.basename(test_files[i])
+                    image_names = [short_name for ww in range(len(image_scores))]
+                    file_names = np.append(file_names, image_names)
 
             end_time = timeit.default_timer()
 
@@ -321,7 +286,7 @@ class FacialDetector:
     def eval_detections(self, detections, scores, file_names):
         ground_truth_file = np.loadtxt(self.params.path_annotations, dtype='str')
         ground_truth_file_names = np.array(ground_truth_file[:, 0])
-        ground_truth_detections = np.array(ground_truth_file[:, 1:], np.int)
+        ground_truth_detections = np.array(ground_truth_file[:, 1:], np.int_)
 
         num_gt_detections = len(ground_truth_detections)  # numar total de adevarat pozitive
         gt_exists_detection = np.zeros(num_gt_detections)

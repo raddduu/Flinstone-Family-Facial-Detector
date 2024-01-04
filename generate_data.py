@@ -46,17 +46,13 @@ class DataGenerator:
                 
                 cut_image = image[bbox[1]:bbox[3], bbox[0]:bbox[2]]
 
-                cut_image_path = os.path.join(positive_images_path, f"{kvp[0]}_{i}0.jpg")
+                cut_image_path = os.path.join(positive_images_path, f"{kvp[0]}_{i}.jpg")
+
+                cut_image = cv.resize(cut_image, (64, 64))
 
                 cv.imwrite(cut_image_path, cut_image)
 
-                flip_image = cv.flip(cut_image, 1)
-
-                flip_image_path = os.path.join(positive_images_path, f"{kvp[0]}_{i}1.jpg")
-
-                cv.imwrite(flip_image_path, flip_image)
-
-        print('positive images generated')
+        print('positive images from test generated')
 
         labeled_images_dir = 'antrenare'
         charcters = ['barney', 'betty', 'fred', 'wilma']
@@ -83,19 +79,15 @@ class DataGenerator:
 
                     cut_image_path = os.path.join(positive_images_path, f"{character}_{file}_{i}0.jpg")
 
+                    cut_image = cv.resize(cut_image, (64, 64))
+
                     cv.imwrite(cut_image_path, cut_image)
-
-                    flip_image = cv.flip(cut_image, 1)
-
-                    flip_image_path = os.path.join(positive_images_path, f"{character}_{file}_{i}1.jpg")
-
-                    cv.imwrite(flip_image_path, flip_image)
 
             print('positive images generated for {}'.format(character))
 
         print('number of positive images: {}'.format(len(os.listdir(positive_images_path))))
 
-    def intersection_over_union(bbox_a, bbox_b):
+    def _intersection_over_union(self, bbox_a, bbox_b):
         x_a = max(bbox_a[0], bbox_b[0])
         y_a = max(bbox_a[1], bbox_b[1])
         x_b = min(bbox_a[2], bbox_b[2])
@@ -111,7 +103,7 @@ class DataGenerator:
     
     def _does_bbox_overlap_with_any_gt_bbox(self, bboxes, potential_bbox):
         for bbox in bboxes:
-            if self.intersection_over_union(bbox, potential_bbox) > 0.1:
+            if self._intersection_over_union(bbox, potential_bbox) > 0.01:
                 return True
 
         return False
@@ -138,9 +130,11 @@ class DataGenerator:
         for line in content:
             line = line.split(' ')
             if line[0] in images_dict.keys():
-                images_dict[line[0]].append(line[1:])
+                images_dict[line[0]].append([int(x) for x in line[1:]])
             else:
-                images_dict[line[0]] = [line[1:]]
+                images_dict[line[0]] = [[int(x) for x in line[1:]]]
+
+        # print(images_dict)
 
         desired_negative_images_per_image = self.negative_examples // len(images_dict.keys())
 
@@ -148,7 +142,9 @@ class DataGenerator:
             desired_negative_images_per_image += 1
 
         number_generated_negative_images = 0
-        images = os.listdir('validare/validare').sort()
+        images = os.listdir('validare/validare')
+        images.sort(key=lambda x: int(x.split('.')[0]))
+
         index = 0
 
         while number_generated_negative_images < self.negative_examples:
@@ -178,11 +174,18 @@ class DataGenerator:
 
                 cut_image_path = os.path.join(negative_images_path, f"{index}_{number_generated_negative_images}.jpg")
 
+                cut_image = cv.resize(cut_image, (64, 64))
+
                 cv.imwrite(cut_image_path, cut_image)
 
                 number_generated_negative_images += 1
+
+                # if number_generated_negative_images % 500 == 0:
+                #     print('generated {} negative images'.format(number_generated_negative_images))
 
                 if number_generated_negative_images == self.negative_examples:
                     break
 
             index += 1
+        
+        print('generated {} negative images'.format(number_generated_negative_images))

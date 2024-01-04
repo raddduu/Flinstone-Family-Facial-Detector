@@ -170,7 +170,7 @@ def evaluate_results_task2(solution_path,ground_truth_path,character, verbose = 
 verbose = 0
 
 #change this on your machine
-solution_path_root = "../fisiere_solutie/331_Alexe_Bogdan/"
+solution_path_root = "../fisiere_solutie/334_Ionescu_Radu-Constantin/"
 ground_truth_path_root = "../../validare/"
 
 
@@ -180,20 +180,20 @@ ground_truth_path = ground_truth_path_root + "task1_gt_validare.txt"
 print(solution_path)
 evaluate_results_task1(solution_path, ground_truth_path, verbose)
 
-#pdb.set_trace()
+# pdb.set_trace()
 
-#task2
-solution_path = solution_path_root + "task2/"
+# #task2
+# solution_path = solution_path_root + "task2/"
 
 
-ground_truth_path = ground_truth_path_root + "task2_fred_gt_validare.txt"
-evaluate_results_task2(solution_path, ground_truth_path, "fred", verbose)
+# ground_truth_path = ground_truth_path_root + "task2_fred_gt_validare.txt"
+# evaluate_results_task2(solution_path, ground_truth_path, "fred", verbose)
 
-ground_truth_path = ground_truth_path_root + "task2_barney_gt_validare.txt"
-evaluate_results_task2(solution_path, ground_truth_path, "barney", verbose)
+# ground_truth_path = ground_truth_path_root + "task2_barney_gt_validare.txt"
+# evaluate_results_task2(solution_path, ground_truth_path, "barney", verbose)
 
-ground_truth_path = ground_truth_path_root + "task2_betty_gt_validare.txt"
-evaluate_results_task2(solution_path, ground_truth_path, "betty", verbose)
+# ground_truth_path = ground_truth_path_root + "task2_betty_gt_validare.txt"
+# evaluate_results_task2(solution_path, ground_truth_path, "betty", verbose)
 
-ground_truth_path = ground_truth_path_root + "task2_wilma_gt_validare.txt"
-evaluate_results_task2(solution_path, ground_truth_path, "wilma", verbose)
+# ground_truth_path = ground_truth_path_root + "task2_wilma_gt_validare.txt"
+# evaluate_results_task2(solution_path, ground_truth_path, "wilma", verbose)

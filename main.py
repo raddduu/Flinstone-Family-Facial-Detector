@@ -2,16 +2,22 @@ from parameters import Parameters
 from facial_detector import FacialDetector
 import pdb
 from visualize import *
+from generate_data import DataGenerator
 
+# Pasul 0. Generam datele de antrenare (exemple pozitive si exemple negative)
+generator = DataGenerator()
+
+if not os.path.exists(generator.positive_images_path) or len(os.listdir(generator.positive_images_path)) == 0:
+    generator.generate_positive_images()
+    print('positive images from test generated')
+
+if not os.path.exists(generator.negative_images_path) or len(os.listdir(generator.negative_images_path)) == 0:
+    generator.generate_negative_images()
+    print('negative images from test generated')
 
 params: Parameters = Parameters()
-params.dim_window = 36  # exemplele pozitive (fete de oameni cropate) au 36x36 pixeli
-params.dim_hog_cell = 6  # dimensiunea celulei
-params.overlap = 0.3
-params.number_positive_examples = 6713  # numarul exemplelor pozitive
-params.number_negative_examples = 10000  # numarul exemplelor negative
 
-params.threshold = 2.5 # toate ferestrele cu scorul > threshold si maxime locale devin detectii
+params.threshold = 3 # toate ferestrele cu scorul > threshold si maxime locale devin detectii
 params.has_annotations = True
 
 params.use_hard_mining = False  # (optional)antrenare cu exemple puternic negative
@@ -19,6 +25,7 @@ params.use_flip_images = True  # adauga imaginile cu fete oglindite
 
 if params.use_flip_images:
     params.number_positive_examples *= 2
+    params.number_negative_examples *= 2
 
 facial_detector: FacialDetector = FacialDetector(params)
 
@@ -62,6 +69,8 @@ facial_detector.train_classifier(training_examples, train_labels)
 
 
 detections, scores, file_names = facial_detector.run()
+
+print('number of detections: {}'.format(len(detections)))
 
 if params.has_annotations:
     facial_detector.eval_detections(detections, scores, file_names)
