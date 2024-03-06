@@ -1,25 +1,19 @@
-Your project should include a README file containing the following information:
-
 1. the libraries required to run the project including the full version of each library
 
-Example:
+python 3.12.0
 
-numpy==1.15.4
-opencv_python==4.1.1.26
-scikit_image==0.15.0
-tensorflow_gpu==1.12.0
-Pillow==7.0.0
-scikit_learn==0.22.1
-skimage==0.0
-tensorflow==2.1.0
+numpy==1.26.3
+opencv_python==4.8.1
+scikit_image(skimage)==0.22.0
+scikit_learn(sklearn)==1.3.2
+matplotlib==3.8.2
 
 2. how to run each task and where to look for the output file.
 
-Example:
+link imagini + descriptori: https://drive.google.com/file/d/1a7t-EyLi9Rz4zdT49Z74AHaJwzeZTSpQ/view?usp=sharing
 
-Task 1: 
-script: task_1.py
-function: run_task1(input_folder_name), where input_folder_name is the path to the folder containing the images for task1
-output: the output file is results/task1.txt
-
-Task 2: ...
+1. Includeti folderul de antrenare
+2. Includeti in folderul de data folderele exemplePozitive si exempleNegative de la linkul de mai sus (imaginile)
+3. Includeti in folderul de data, in folderul de salveazaFisiere, continutul folderul salveazaFisiere de la linkul de mai sus (descriptorii)
+4. Actualizati in parameters.py path-urile catre fisierele de solutie dorite + ground_truth-uri in evalueaza_solutie.py
+5. Rulati main.py pentru generarea raspunsurilor la ambele task-uri si apoi codul evalueaza_solutie.py pentru evaluare
